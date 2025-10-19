@@ -9,8 +9,8 @@ export const handler = router({
   },
   post: {
     "/keys": keyHandler,
-    "/sdk/acquire": (req) => sdkHandler(req, "acquire"),
-    "/sdk/release": (req) => sdkHandler(req, "release"),
+    "/key/acquire": (req) => keyHandler(req, "acquire"),
+    "/key/release": (req) => keyHandler(req, "release"),
     "/auth/login": authHandler,
   },
 });
