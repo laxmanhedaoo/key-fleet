@@ -2,13 +2,13 @@
 
 import dotenv from "dotenv";
 dotenv.config();
-import { keyHandler } from "../src/handlers/keyHandler.ts"; 
-import { KeyAction, KeyStatus } from "../src/models/types.ts"; 
+import { keyHandler } from "../src/handlers/keyHandler.js"; 
+import { KeyAction, KeyStatus } from "../src/models/types.js"; 
 
 
 
 
-const { redis } = require("../src/services/redisClient.ts");
+const { redis } = require("../src/services/redisClient.js");
 
 describe("Lambda Handlers", () => {
   beforeEach(() => {

@@ -1,4 +1,4 @@
-import { Auth } from "../services/auth.ts";
+import { Auth } from "../services/auth.js";
 
 export async function authHandler(req: any) {
   const body = JSON.parse(req.body || "{}");

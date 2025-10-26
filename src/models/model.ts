@@ -1,5 +1,5 @@
 
-import { KeyStatus } from "../models/types.ts";
+import { KeyStatus } from "../models/types.js";
 
 export interface Provider {
   id: string;

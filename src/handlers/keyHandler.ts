@@ -1,6 +1,6 @@
 // src/handlers/keyHandler.ts
-import { KeyManager } from "../services/keyManager.ts";
-import { KeyAction } from "../models/types.ts";
+import { KeyManager } from "../services/keyManager.js";
+import { KeyAction } from "../models/types.js";
 
 export async function keyHandler(req: any, action: KeyAction) {
   const body = JSON.parse(req.body || "{}");
@@ -33,7 +33,7 @@ export async function keyHandler(req: any, action: KeyAction) {
       const data = await KeyManager.addKey(provider, metadata);
       return {
         statusCode: 201,
-        body: JSON.stringify(data)
+        body: JSON.stringify(data.id)
       };
     }
  

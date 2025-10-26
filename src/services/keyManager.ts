@@ -1,7 +1,7 @@
 // src/services/keyManager.ts
-import { redis } from "./redisClient.ts";
-import { KeyInfo } from "../models/model.ts";
-import { KeyStatus } from "../models/types.ts";
+import { redis } from "./redisClient.js";
+import { KeyInfo } from "../models/model.js";
+import { KeyStatus } from "../models/types.js";
 
 
 const KEY_PREFIX = "KEY:";
