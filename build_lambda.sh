@@ -5,25 +5,25 @@ set -e  # Exit on error
 BUILD_DIR="lambda_build"
 ZIP_FILE="lambda_function.zip"
 
-echo "🚀 Starting Lambda packaging process..."
+echo "Build Project"
+npm install
+npm run build
 
-# 1. Clean up any previous build
+echo "Starting Lambda packaging process..."
+
 rm -rf "$BUILD_DIR" "$ZIP_FILE"
 
-# 2. Create build directory
 mkdir "$BUILD_DIR"
 
-# 3. Copy files and folders
-echo "📦 Copying files..."
+echo "Copying files..."
 cp -r dist/* "$BUILD_DIR"/
 cp -r node_modules "$BUILD_DIR"/
 cp package.json "$BUILD_DIR"/
 
-# 4. Go inside the build directory and zip everything
-echo "🧩 Creating ZIP archive..."
+echo "Creating ZIP archive..."
 cd "$BUILD_DIR"
 zip -r "../$ZIP_FILE" . > /dev/null
 
 cd ..
 rm -rf "$BUILD_DIR"
-echo "✅ Lambda package created: $ZIP_FILE"
+echo "Lambda package created: $ZIP_FILE"
