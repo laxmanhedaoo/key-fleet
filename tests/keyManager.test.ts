@@ -1,51 +1,57 @@
-// tests/keyManager.test.ts
-import { KeyManager } from "../src/services/keyManager.js";
-import { redis } from "../src/services/redisClient.js";
-import { KeyStatus } from "../src/types.js";
 
-jest.mock("../src/services/redisClient.js", () => {
-  return {
-    redis: {
-      json: {
-        get: jest.fn(),
-        set: jest.fn(),
-      },
-    },
-  };
-});
 
-describe("KeyManager", () => {
-  const providerId = "provider_test";
+import dotenv from "dotenv";
+dotenv.config();
+import { keyHandler } from "../src/handlers/keyHandler.ts"; 
+import { KeyAction, KeyStatus } from "../src/models/types.ts"; 
 
+
+
+
+const { redis } = require("../src/services/redisClient.ts");
+
+describe("Lambda Handlers", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
+ 
 
-  it("should acquire an available key", async () => {
-    const mockKeys = [
-      { id: "k1", providerId, key: "abc", status: KeyStatus.ACTIVE, lastUsed: undefined },
-    ];
+  // ---------------- KeyHandler ----------------
+  it("keyHandler CREATE should create a key", async () => { 
 
-    (redis.json.get as jest.Mock).mockResolvedValue(mockKeys);
-    (redis.json.set as jest.Mock).mockResolvedValue(true);
+    const req = {
+      body: JSON.stringify({ provider: "livekit", metadata: {
+        "api_key": "mykey123",
+        "secret": "mysecret123",
+        "url": "urllll",
+        "email": "asjdlgkas@gmail.com"
+      } }),
+    };
+    const res = await keyHandler(req, KeyAction.CREATE);
+    expect(res.statusCode).toBe(201);
 
-    const key = await KeyManager.acquire(providerId);
-
-    expect(key).toBeDefined();
-    expect(key?.status).toBe(KeyStatus.IN_USE);
-    expect(redis.json.set).toHaveBeenCalled();
+    const body = JSON.parse(res.body); 
+    expect(body.status).toBe(KeyStatus.ACTIVE);
   });
 
-  it("should release a key", async () => {
-    const mockKeys = [
-      { id: "k1", providerId, key: "abc", status: KeyStatus.IN_USE, lastUsed: undefined },
-    ];
-    (redis.json.get as jest.Mock).mockResolvedValue(mockKeys);
-    (redis.json.set as jest.Mock).mockResolvedValue(true);
+  it("keyHandler ACQUIRE should acquire an active key", async () => { 
 
-    const result = await KeyManager.release(providerId, "k1");
+    const req = { body: JSON.stringify({ provider: "livekit" }) };
+    const res = await keyHandler(req, KeyAction.ACQUIRE);
+    console.log(`res : ${JSON.stringify(res)}`)
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body)
+    expect(body.status).toBe(KeyStatus.IN_USE);
+  });
 
-    expect(result).toBe(true);
-    expect(mockKeys[0].status).toBe(KeyStatus.ACTIVE);
+  it("keyHandler RELEASE should release a key", async () => {
+    const mockKeys = [{ id: "key_1761459771100", provider: "livekit", status: KeyStatus.IN_USE }]; 
+
+    const req = { body: JSON.stringify({ provider: "livekit", keyId: "key_1761459771100" }) };
+    const res = await keyHandler(req, KeyAction.RELEASE);
+    console.log(`RELEASE res : ${JSON.stringify(res)}`)
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.status).toBe(KeyStatus.ACTIVE); 
   });
 });

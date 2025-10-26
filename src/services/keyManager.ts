@@ -1,71 +1,87 @@
 // src/services/keyManager.ts
-import { redis } from "./redisClient.js";
-import { KeyInfo } from "../models/model.js";
-import { KeyStatus, KeyAction } from "../types.js";
+import { redis } from "./redisClient.ts";
+import { KeyInfo } from "../models/model.ts";
+import { KeyStatus } from "../models/types.ts";
+
 
 const KEY_PREFIX = "KEY:";
 
 export const KeyManager = {
 
-  async acquire(providerId: string): Promise<KeyInfo | null> {
-    const keys = (await redis.json.get(`${KEY_PREFIX}${providerId}`)) as KeyInfo[] || [];
 
-    const available = keys.find(k => k.status === KeyStatus.ACTIVE);
-    if (!available) return null;
+  async acquire(provider: string) : Promise<any>{ 
+    console.log(`acquire() for provider ${provider}`)  
+    const usageKey = `${KEY_PREFIX}${provider}:keys`;
+    const metaKey = `${KEY_PREFIX}${provider}:meta`;
+    
+    const result = await redis.zrange(usageKey, 0, 0, { withScores: true });
 
-    available.status = KeyStatus.IN_USE;
-    available.lastUsed = new Date().toISOString();
+    if (!result || result.length === 0) throw new Error(`No keys for provider result: ${provider}`);
 
-    await redis.json.set(`${KEY_PREFIX}${providerId}`, "$", keys);
-    return available;
+    // result is [member, score]
+    const keyId = result[0] as string;   // member
+    const score = Number(result[1]);     // score (string → number)
+
+    console.log(`acquire() KEY ID ${keyId} SCORE ${score}`);
+
+    if (!keyId) throw new Error(`No keys for provider: ${provider}`);
+
+    const keyData = await redis.hget(metaKey, keyId);
+    if (!keyData) throw new Error(`Metadata missing for ${keyId}`);
+    console.log(` KEY Data ${JSON.stringify(keyData)}`)
+
+    const data = typeof keyData === "string" ? JSON.parse(keyData) : keyData;
+    if (data.status !== KeyStatus.ACTIVE) {
+      // skip and bump usage slightly
+      console.log(` Status is NOT ACTIVE of key ${keyId}`) 
+      return await this.acquire(provider);
+    }
+
+    console.log(` Status is ACTIVE of key ${keyId} and marking IN_USE`)
+    // mark as IN_USE
+    data.status = KeyStatus.IN_USE;
+    data.lastUsed = new Date().toISOString();
+
+    await redis.hset(metaKey, { [data.id]: JSON.stringify(data) });
+    await redis.zincrby(usageKey, 1, keyId);
+
+    return data;
   },
 
-  async release(providerId: string, keyId: string): Promise<boolean> {
-    const keys = (await redis.json.get(`${KEY_PREFIX}${providerId}`)) as KeyInfo[] || [];
+  async release(provider: string, keyId: string){ 
 
-    const target = keys.find(k => k.id === keyId);
-    if (!target) return false;
+    const metaKey = `${KEY_PREFIX}${provider}:meta`;
+    const raw = await redis.hget(metaKey, keyId) as string;
+    if (!raw) throw new Error(`Key ${keyId} not found`);
+    const data = typeof raw === "string" ? JSON.parse(raw) : raw;
+    data.status = KeyStatus.ACTIVE;
+    data.lastUsed = new Date().toISOString();
 
-    target.status = KeyStatus.ACTIVE;
-    await redis.json.set(`${KEY_PREFIX}${providerId}`, "$", keys);
-    return true;
+    await redis.hset(metaKey, { [keyId]: JSON.stringify(data) });
+    return data;
   },
+  
+  async addKey(provider: string, metadata: Record<string, any>) {
+    const metaKey = `${KEY_PREFIX}${provider}:meta`;
+    const usageKey = `${KEY_PREFIX}${provider}:keys`;
 
-  async create(providerId: string, keyValue: string): Promise<KeyInfo> {
-    const keys = (await redis.json.get(`${KEY_PREFIX}${providerId}`)) as KeyInfo[] || [];
-    const newKey: KeyInfo = {
-      id: `key_${Date.now()}`,
-      providerId,
-      key: keyValue,
-      status: KeyStatus.PENDING,
+    const keyId = `key_${Date.now()}`;
+
+    const keyData: KeyInfo = {
+      id: keyId,
+      provider: provider,
+      status: KeyStatus.ACTIVE,
       lastUsed: undefined,
-      metadata: {}
+      ...metadata,
     };
 
-    keys.push(newKey);
-    await redis.json.set(`${KEY_PREFIX}${providerId}`, "$", keys);
-    return newKey;
+    // store metadata as JSON string in hash
+    await redis.hset(metaKey, { [keyId]: JSON.stringify(keyData) });
+ 
+    // add key to round-robin zset
+    await redis.zadd(usageKey, { score: 0, member: keyId });
+    return keyData;
   },
 
-  async markInvalid(providerId: string, keyId: string): Promise<boolean> {
-    const keys = (await redis.json.get(`${KEY_PREFIX}${providerId}`)) as KeyInfo[] || [];
-
-    const target = keys.find(k => k.id === keyId);
-    if (!target) return false;
-
-    target.status = KeyStatus.DISABLED;
-    await redis.json.set(`${KEY_PREFIX}${providerId}`, "$", keys);
-    return true;
-  },
-
-  async expire(providerId: string, keyId: string): Promise<boolean> {
-    const keys = (await redis.json.get(`${KEY_PREFIX}${providerId}`)) as KeyInfo[] || [];
-
-    const target = keys.find(k => k.id === keyId);
-    if (!target) return false;
-
-    target.status = KeyStatus.EXPIRED;
-    await redis.json.set(`${KEY_PREFIX}${providerId}`, "$", keys);
-    return true;
-  }
+  
 };

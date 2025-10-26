@@ -2,6 +2,25 @@
   "name": "key-fleet",
   "version": "0.1.0",
   "type": "module",
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testMatch": [
+      "**/*.test.ts"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "js",
+      "json",
+      "node"
+    ],
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ]
+  },
   "scripts": {
     "build": "tsc",
     "start": "ts-node src/index.ts",
@@ -11,6 +30,7 @@
   "dependencies": {
     "@upstash/redis": "^1.25.2",
     "aws-lambda": "^1.0.7",
+    "dotenv": "^17.2.3",
     "glob": "^9.3.5"
   },
   "devDependencies": {

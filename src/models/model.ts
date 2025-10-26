@@ -1,5 +1,5 @@
 
-import { KeyStatus } from "../types.js";
+import { KeyStatus } from "../models/types.ts";
 
 export interface Provider {
   id: string;
@@ -9,8 +9,7 @@ export interface Provider {
 
 export interface KeyInfo {
   id: string;
-  providerId: string;
-  key: string;
+  provider: string;
   status: KeyStatus
   lastUsed?: string;
   metadata?: Record<string, any>;

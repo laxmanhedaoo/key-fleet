@@ -1,51 +1,42 @@
 // src/handlers/keyHandler.ts
-import { KeyManager } from "../services/keyManager.js";
-import { KeyAction } from "../types.js";
+import { KeyManager } from "../services/keyManager.ts";
+import { KeyAction } from "../models/types.ts";
 
 export async function keyHandler(req: any, action: KeyAction) {
   const body = JSON.parse(req.body || "{}");
-  const { providerId, keyId, key } = body;
+  const { provider, keyId, metadata } = body;
 
   switch (action) {
     case KeyAction.ACQUIRE: {
-      const result = await KeyManager.acquire(providerId);
+      const data = await KeyManager.acquire(provider);
+      if (!data) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ error: `No keys available for provider: ${provider}` }),
+        };
+      }
       return {
         statusCode: 200,
-        body: JSON.stringify(result)
+        body: JSON.stringify(data), // now always a KeyInfo object
       };
     }
 
     case KeyAction.RELEASE: {
-      const ok = await KeyManager.release(providerId, keyId);
+      const data = await KeyManager.release(provider, keyId);
       return {
         statusCode: 200,
-        body: JSON.stringify({ released: ok })
+        body: JSON.stringify(data)
       };
     }
 
     case KeyAction.CREATE: {
-      const created = await KeyManager.create(providerId, key);
+      const data = await KeyManager.addKey(provider, metadata);
       return {
         statusCode: 201,
-        body: JSON.stringify(created)
+        body: JSON.stringify(data)
       };
     }
-
-    case KeyAction.MARK_INVALID: {
-      const ok = await KeyManager.markInvalid(providerId, keyId);
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ invalidated: ok })
-      };
-    }
-
-    case KeyAction.EXPIRE: {
-      const ok = await KeyManager.expire(providerId, keyId);
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ expired: ok })
-      };
-    }
+ 
 
     default:
       return {
