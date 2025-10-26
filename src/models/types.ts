@@ -5,6 +5,7 @@ export enum KeyAction {
   RELEASE = "release",
   CREATE = "create",
   EXPIRE = "expire",
+  FETCH = "fetch"
 }
 
 export enum KeyStatus {

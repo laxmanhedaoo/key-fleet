@@ -22,6 +22,10 @@ export const handler = async (event: APIGatewayEvent, context: Context) => {
     return keyHandler(event, KeyAction.CREATE);
   }
 
+  if (path.endsWith("/keys") && method === "GET") {
+    return keyHandler(event, KeyAction.FETCH);
+  }
+
   if (path.endsWith("/key/acquire") && method === "POST") {
     return keyHandler(event, KeyAction.ACQUIRE);
   }

@@ -84,4 +84,14 @@ export const KeyManager = {
   },
 
   
-};
+  async getAllKeys(provider: string) {
+    const metaKey = `${KEY_PREFIX}${provider}:meta`;
+
+    // Fetch all key metadata (stored in hash)
+    const metaEntries = await redis.hgetall(metaKey);
+    if (!metaEntries || Object.keys(metaEntries).length === 0) {
+      return [];
+    }
+    return metaEntries
+  }
+}

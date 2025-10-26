@@ -36,7 +36,15 @@ export async function keyHandler(req: any, action: KeyAction) {
         body: JSON.stringify(data.id)
       };
     }
- 
+
+    case KeyAction.FETCH: {
+      const data = await KeyManager.getAllKeys(provider);
+      return {
+        statusCode: 201,
+        body: JSON.stringify(data)
+      };
+    }
+
 
     default:
       return {
