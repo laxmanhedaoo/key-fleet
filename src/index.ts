@@ -14,15 +14,17 @@ export const handler = async (event: APIGatewayEvent, context: Context) => {
   console.log("EVENT PATH:", event.path);
   console.log("EVENT RESOURCE:", event.resource);
   console.log("HTTP METHOD:", event.httpMethod);
+
+  
   if (path.endsWith("/providers") && method === "GET") {
     return providerHandler(event);
   }
 
-  if (path.endsWith("/keys") && method === "POST") {
+  if (path.endsWith("/key/add") && method === "POST") {
     return keyHandler(event, KeyAction.CREATE);
   }
 
-  if (path.endsWith("/keys") && method === "GET") {
+  if (path.endsWith("/keys") && method === "POST") {
     return keyHandler(event, KeyAction.FETCH);
   }
 

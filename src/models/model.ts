@@ -12,6 +12,15 @@ export interface KeyInfo {
   provider: string;
   status: KeyStatus
   lastUsed?: string;
+  
+  concurrency: number,
+  maxConcurrency: number, 
+  
+  monthlyUsageCount: number,
+  monthlyUsageLimit: number, 
+  
+  monthlyUsageDuration: number,
+  monthlyDurationLimit: number,
   metadata?: Record<string, any>;
 }
 

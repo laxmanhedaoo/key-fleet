@@ -6,8 +6,8 @@ BUILD_DIR="lambda_build"
 ZIP_FILE="lambda_function.zip"
 
 echo "Build Project"
-npm install
-npm run build
+sudo npm install
+sudo npm run build
 
 echo "Starting Lambda packaging process..."
 
